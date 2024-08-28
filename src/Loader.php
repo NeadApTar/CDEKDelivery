@@ -23,6 +23,7 @@ namespace Cdek {
     use Cdek\Controllers\RestController;
     use Cdek\Helpers\CheckoutHelper;
     use Cdek\Helpers\DataWPScraber;
+    use Cdek\Managers\WebhookManager;
     use Cdek\UI\Admin;
     use Cdek\UI\AdminNotices;
     use Cdek\UI\AdminShippingFields;
@@ -83,6 +84,7 @@ namespace Cdek {
 
             self::checkRequirements();
             TaskManager::addPluginScheduleEvents();
+            WebhookManager::update();
         }
 
         public static function deactivate()
