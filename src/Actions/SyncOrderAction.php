@@ -90,10 +90,10 @@ namespace Cdek\Actions {
                 case 'PASSED_TO_TRANSIT_CARRIER':
                 case 'IN_CUSTOMS_LOCAL':
                 case 'CUSTOMS_COMPLETE':
-                case 'POSTOMAT_POSTED':
                     $status = Helper::getActualShippingMethod()->get_option('status_in_transit');
                     break;
                 case 'ACCEPTED_AT_PICK_UP_POINT':
+                case 'POSTOMAT_POSTED':
                     $status = Helper::getActualShippingMethod()->get_option('status_in_pvz');
                     break;
                 case 'TAKEN_BY_COURIER':
