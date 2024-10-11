@@ -60,7 +60,7 @@ namespace Cdek\Actions {
 
         private function updateOrderStatus()
         {
-            $status = '';
+            $status = 'none';
 
             switch ($this->data['attributes']['code']) {
                 case 'CREATED':
@@ -109,7 +109,8 @@ namespace Cdek\Actions {
                     break;
             }
 
-            if (($status !== $this->order->get_status()) && ($status !== 'none')) {
+            $order_status = 'wc-' . $this->order->get_status();
+            if (($status !== $order_status) && ($status !== 'none')) {
                 $this->order->update_status($status, '[CDEKDelivery]');
             }
         }
