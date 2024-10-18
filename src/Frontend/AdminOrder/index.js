@@ -15,16 +15,13 @@ $(document).ready(() => {
         if (dataStatusAvailable !== undefined && !dataStatusAvailable) {
             $('#order_data')
               .find('input[name="order_date"]')
-              .attr('disabled', true);
+              .attr('readonly', true);
             $('#order_data')
               .find('input[name="order_date_hour"]')
-              .attr('disabled', true);
+              .attr('readonly', true);
             $('#order_data')
               .find('input[name="order_date_minute"]')
-              .attr('disabled', true);
-            $('#order_data')
-              .find('select[name="customer_user"]')
-              .attr('disabled', true);
+              .attr('readonly', true);
             $('#order_data').find('a[class="edit_address"]').hide();
         }
     }
