@@ -41,7 +41,6 @@
   },
   "require": {
     "php": "^7.4",
-    "composer/installers": "~2.0",
     "giggsey/libphonenumber-for-php": "^8.13"
   },
   "require-dev": {
@@ -51,9 +50,6 @@
   "config": {
     "sort-packages": true,
     "optimize-autoloader": true,
-    "allow-plugins": {
-      "composer/installers": true
-    },
     "platform": {
       "php": "7.4"
     }
