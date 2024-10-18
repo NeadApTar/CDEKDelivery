@@ -13,6 +13,7 @@ namespace Cdek {
     use libphonenumber\PhoneNumberUtil;
     use RuntimeException;
     use Throwable;
+    use WC_Logger;
     use function WC;
 
     class Helper
@@ -131,6 +132,16 @@ namespace Cdek {
             if (!$phoneNumUtil->isValidNumber($phoneNumUtil->parse($shippingRecipientPhone, $countryCode))) {
                 throw new PhoneNotValidException($shippingRecipientPhone, $countryCode);
             }
+        }
+
+        public static function log($message, $extra_data = [], string $id = null): void
+        {
+            if (is_null($id)) {
+                $id = Loader::getPluginName();
+            }
+            $logger = new WC_Logger();
+            $context = array_merge([ 'source' => $id ], $extra_data);
+            $logger->debug($message, $context);
         }
     }
 }
