@@ -112,6 +112,7 @@ namespace Cdek {
         public static function upgrade(): void
         {
             TaskManager::scheduleExecution();
+            WebhookManager::update();
 
             foreach (self::MIGRATORS as $migrator) {
                 (new $migrator)();
