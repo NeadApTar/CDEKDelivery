@@ -9,6 +9,7 @@ namespace Cdek\Controllers {
 
     use Cdek\Actions\GenerateBarcodeAction;
     use Cdek\Actions\GenerateWaybillAction;
+    use Cdek\Actions\SyncOrderAction;
     use Cdek\CdekApi;
     use Cdek\Config;
     use Cdek\Helpers\DBTokenStorage;
@@ -46,6 +47,13 @@ namespace Cdek\Controllers {
             return new WP_REST_Response((new GenerateBarcodeAction)(OrderMetaData::getMetaByOrderId($request->get_param('id'))['order_uuid']
                                                                     ??
                                                                     ''));
+        }
+
+        public static function updateStatus(WP_REST_Request $request): WP_REST_Response
+        {
+            return new WP_REST_Response(
+                (new SyncOrderAction())($request->get_json_params() ?? [])
+            );
         }
 
         public function __invoke(): void
@@ -88,6 +96,12 @@ namespace Cdek\Controllers {
                         'type'        => 'number',
                     ],
                 ],
+            ]);
+
+            register_rest_route(Config::DELIVERY_NAME, '/webhook', [
+                'methods'  => WP_REST_Server::CREATABLE,
+                'callback' => [__CLASS__, 'updateStatus'],
+                'permission_callback' => '__return_true',
             ]);
         }
     }

@@ -12,6 +12,7 @@ namespace Cdek {
     use Cdek\Exceptions\CdekApiException;
     use Cdek\Exceptions\RestApiInvalidRequestException;
     use Cdek\Helpers\DBTokenStorage;
+    use Cdek\Helpers\UrlHelper;
     use Cdek\Transport\HttpClient;
     use WC_Shipping_Method;
 
@@ -26,6 +27,7 @@ namespace Cdek {
         private const WAYBILL_PATH = 'print/orders/';
         private const BARCODE_PATH = 'print/barcodes/';
         private const CALL_COURIER = 'intakes';
+        private const WEBHOOK_PATH = 'webhooks/';
 
         private string $apiUrl;
 
@@ -297,6 +299,41 @@ namespace Cdek {
             return HttpClient::sendCdekRequest($this->apiUrl . self::CALL_COURIER . '/' . $uuid,
                                                'DELETE',
                                                $this->tokenStorage->getToken());
+        }
+
+        /**
+         * @throws \Cdek\Exceptions\CdekApiException
+         * @throws \JsonException
+         */
+        public function addWebhook()
+        {
+            $url = $this->apiUrl . self::WEBHOOK_PATH;
+            $params = [
+                'url'       => rest_url(Config::DELIVERY_NAME . '/webhook'),
+                'type'      => 'ORDER_STATUS',
+                'retryable' => true,
+            ];
+        	return HttpClient::sendCdekRequest($url, 'POST', $this->tokenStorage->getToken(), $params );
+        }
+
+        /**
+         * @throws \JsonException
+         * @throws \Cdek\Exceptions\CdekApiException
+         */
+        public function getWebhook()
+        {
+            $url = $this->apiUrl . self::WEBHOOK_PATH . $this->deliveryMethod->get_option('synchronization_webhook');
+            return HttpClient::sendCdekRequest($url, 'GET', $this->tokenStorage->getToken());
+        }
+
+        /**
+         * @throws \Cdek\Exceptions\CdekApiException
+         * @throws \JsonException
+         */
+        public function deleteWebhook()
+        {
+            $url = $this->apiUrl . self::WEBHOOK_PATH . $this->deliveryMethod->get_option('synchronization_webhook');
+            return HttpClient::sendCdekRequest($url, 'DELETE', $this->tokenStorage->getToken());
         }
     }
 }
