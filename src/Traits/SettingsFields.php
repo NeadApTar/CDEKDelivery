@@ -274,6 +274,132 @@ namespace Cdek\Traits {
                         'cdekdelivery',
                     ),
                 ],
+                'synchronization_title'              => [
+                    'title' => esc_html__('Statuses synchronization', 'cdekdelivery'),
+                    'type'  => 'title',
+                ],
+                'synchronization_statuses'           => [
+                    'title'       => esc_html__('Enable order status update', 'cdekdelivery'),
+                    'type'        => 'checkbox',
+                    'desc_tip'    => true,
+                    'description' => esc_html__(
+                        'Allow to receive information about delivery status changes. Order statuses will be automatically updated',
+                        'cdekdelivery',
+                    ),
+                ],
+                'synchronization_webhook'            => [
+                    'title'             => esc_html__('Webhook ID', 'cdekdelivery'),
+                    'type'              => 'text',
+                    'desc_tip'          => true,
+                    'description'       => esc_html__(
+                        'Webhook subscription ID in the CDEK',
+                        'cdekdelivery',
+                    ),
+                    'custom_attributes' => [
+                        'readonly' => true,
+                    ],
+                ],
+                'status_exported'                    => [
+                    'title'       => esc_html__('Order exported status', 'cdekdelivery'),
+                    'desc_tip'    => true,
+                    'description' => esc_html__(
+                        'Select the status that will be set if it is exported',
+                        'cdekdelivery',
+                    ),
+                    'type'        => 'select',
+                    'default'     => 'none',
+                    'options'     => array_merge(
+                        ['none' => esc_html__('Don\'t use', 'cdekdelivery')],
+                        wc_get_order_statuses()
+                    ),
+                ],
+                'status_warehouse'                   => [
+                    'title'       => esc_html__('Received at the shipment warehouse', 'cdekdelivery'),
+                    'desc_tip'    => true,
+                    'description' => esc_html__(
+                        'Select the status that will be set if it is received at the shipment warehouse',
+                        'cdekdelivery',
+                    ),
+                    'type'        => 'select',
+                    'default'     => 'none',
+                    'options'     => array_merge(
+                        ['none' => esc_html__('Don\'t use', 'cdekdelivery')],
+                        wc_get_order_statuses()
+                    ),
+                ],
+                'status_in_transit'                   => [
+                    'title'       => esc_html__('The order is in transit', 'cdekdelivery'),
+                    'desc_tip'    => true,
+                    'description' => esc_html__(
+                        'Select the status that will be set if order is in transit',
+                        'cdekdelivery',
+                    ),
+                    'type'        => 'select',
+                    'default'     => 'none',
+                    'options'     => array_merge(
+                        ['none' => esc_html__('Don\'t use', 'cdekdelivery')],
+                        wc_get_order_statuses()
+                    ),
+                ],
+                'status_in_pvz'                   => [
+                    'title'       => esc_html__(
+                        'Ready for pickup from the ODP/parcel automat',
+                        'cdekdelivery',
+                    ),
+                    'desc_tip'    => true,
+                    'description' => esc_html__(
+                        'Select the status that will be set if the order is waiting for pickup from ODP/parcel automat',
+                        'cdekdelivery',
+                    ),
+                    'type'        => 'select',
+                    'default'     => 'none',
+                    'options'     => array_merge(
+                        ['none' => esc_html__('Don\'t use', 'cdekdelivery')],
+                        wc_get_order_statuses()
+                    ),
+                ],
+                'status_courier'                   => [
+                    'title'       => esc_html__('Handed over to the courier', 'cdekdelivery'),
+                    'desc_tip'    => true,
+                    'description' => esc_html__(
+                        'Select the status that will be set if the order is handed over to the courier',
+                        'cdekdelivery',
+                    ),
+                    'type'        => 'select',
+                    'default'     => 'none',
+                    'options'     => array_merge(
+                        ['none' => esc_html__('Don\'t use', 'cdekdelivery')],
+                        wc_get_order_statuses()
+                    ),
+                ],
+                'status_delivered'                   => [
+                    'title'       => esc_html__('Order delivered status', 'cdekdelivery'),
+                    'desc_tip'    => true,
+                    'description' => esc_html__(
+                        'Select the status that will be set if it is delivered to the buyer',
+                        'cdekdelivery',
+                    ),
+                    'type'        => 'select',
+                    'default'     => 'wc-completed',
+                    'options'     => array_merge(
+                        ['none' => esc_html__('Don\'t use', 'cdekdelivery')],
+                        wc_get_order_statuses()
+                    ),
+                ],
+                'status_returned'                   => [
+                    'title'       => esc_html__('Order status not delivered', 'cdekdelivery'),
+                    'desc_tip'    => true,
+                    'description' => esc_html__(
+                        'Select the status that will be set if the order has not been delivered and is returned to the store',
+                        'cdekdelivery',
+                    ),
+                    'type'        => 'select',
+                    'default'     => 'none',
+                    'options'     => array_merge(
+                        ['none' => esc_html__('Don\'t use', 'cdekdelivery')],
+                        wc_get_order_statuses()
+                    ),
+                ],
                 'delivery_block_name'                => [
                     'title' => '<h3 style="text-align: center;">'.esc_html__('Delivery', 'cdekdelivery').'</h3>',
                     'type'  => 'title',
