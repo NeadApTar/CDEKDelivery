@@ -60,6 +60,10 @@ namespace Cdek\UI {
             }
 
             printf(
+                '<span>Количество дней доставки: %s дней</span>',
+                $shippingMethodCurrent->get_meta_data()[MetaKeys::PERIOD],
+            );
+            printf(
                 '<div class="open-pvz-btn" data-city="%s"><script type="application/cdek-offices">%s</script><a>%s</a></div><input name="office_code" class="cdek-office-code" type="hidden" value="%s"/>',
                 esc_attr($meta[MetaKeys::CITY]),
                 wc_esc_json($city !== null ? $api->officeListRaw($city) : '[]', true),
