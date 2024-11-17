@@ -10,6 +10,7 @@ namespace Cdek\UI {
     use Cdek\CdekApi;
     use Cdek\Config;
     use Cdek\Helpers\CheckoutHelper;
+    use Cdek\MetaKeys;
     use Cdek\Model\Tariff;
 
     class CheckoutMap
@@ -40,7 +41,9 @@ namespace Cdek\UI {
                                                       ])['body'] : '[]';
 
             $mapAutoClose = CheckoutHelper::getMapAutoClose();
+            $period = $shippingMethodCurrent->get_meta_data()[MetaKeys::PERIOD];
 
+            include __DIR__.'/../../templates/public/delivery-days.php';
             include __DIR__.'/../../templates/public/open-map.php';
         }
 

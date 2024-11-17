@@ -9,6 +9,7 @@ class MetaKeys
     public const LENGTH = '_official_cdek_length';
     public const WIDTH = '_official_cdek_width';
     public const HEIGHT = '_official_cdek_height';
+    public const PERIOD = '_official_cdek_period';
 
     public const TARIFF_CODE = '_official_cdek_tariff_code';
     public const TARIFF_MODE = '_official_cdek_tariff_mode';

@@ -138,9 +138,8 @@ namespace Cdek\Actions {
 
                     $this->rates[$tariff['tariff_code']] = [
                         'id'        => sprintf('%s:%s', Config::DELIVERY_NAME, $tariff['tariff_code']),
-                        'label'     => sprintf("CDEK: %s, (%s-%s дней)",
-                                               Tariff::getTariffUserNameByCode($tariff['tariff_code']), $minDay,
-                                               $maxDay),
+                        'label'     => sprintf("CDEK: %s",
+                                               Tariff::getTariffUserNameByCode($tariff['tariff_code'])),
                         'cost'      => $cost,
                         'meta_data' => [
                             MetaKeys::ADDRESS_HASH => sha1($deliveryParam['to']['postal_code'].
@@ -152,6 +151,7 @@ namespace Cdek\Actions {
                             MetaKeys::LENGTH       => $deliveryParam['packages']['length'],
                             MetaKeys::WIDTH        => $deliveryParam['packages']['width'],
                             MetaKeys::HEIGHT       => $deliveryParam['packages']['height'],
+                            MetaKeys::PERIOD       => "{$minDay}-{$maxDay}",
                         ],
                     ];
                 }
