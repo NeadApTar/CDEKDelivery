@@ -61,9 +61,14 @@ namespace Cdek\Actions {
 
                 $orderData = $this->api->createOrder($param);
 
+                Helper::log("Создание отправления для заказа {$orderId}", $orderData);
+
                 sleep(5);
 
-                $cdekNumber = $this->getCdekOrderNumber($orderData['entity']['uuid']);
+                $cdekOrder = $this->getCdekOrder($orderData['entity']['uuid']);
+                $cdekNumber = $cdekOrder['entity']['cdek_number'];
+
+                Helper::log("Данные отправления для заказа {$orderId}", $cdekOrder);
 
                 try {
                     $cdekStatuses         = Helper::getCdekOrderStatuses($orderData['entity']['uuid']);
@@ -371,7 +376,7 @@ namespace Cdek\Actions {
             return $cost;
         }
 
-        private function getCdekOrderNumber(string $orderUuid, int $iteration = 1): ?string
+        private function getCdekOrder(string $orderUuid, int $iteration = 1): ?array
         {
             sleep(1);
 
@@ -382,7 +387,7 @@ namespace Cdek\Actions {
             $orderInfoJson = $this->api->getOrder($orderUuid);
             $orderInfo     = json_decode($orderInfoJson, true);
 
-            return $orderInfo['entity']['cdek_number'] ?? $this->getCdekOrderNumber($orderUuid, $iteration + 1);
+            return $orderInfo ?? $this->getCdekOrder($orderUuid, $iteration + 1);
         }
     }
 }
