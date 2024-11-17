@@ -17,4 +17,5 @@ class MetaKeys
     public const JEWEL_UIN    = '_official_cdek_jewel_uin';
     public const POSTAL       = '_official_cdek_postal';
     public const CITY         = '_official_cdek_city';
+    public const PERIOD       = '_official_cdek_period';
 }

@@ -126,15 +126,9 @@ namespace Cdek\Actions {
 
                     $this->rates[$tariff['tariff_code']] = [
                         'id'        => sprintf('%s:%s', Config::DELIVERY_NAME, $tariff['tariff_code']),
-                        'label'     => ($minDay === $maxDay) ? sprintf(
-                            esc_html__('%s, (%s day)', 'cdekdelivery'),
+                        'label'     => esc_html__(
                             Tariff::getName($tariff['tariff_code'], $tariff['tariff_name']),
-                            $minDay,
-                        ) : sprintf(
-                            esc_html__('%s, (%s-%s days)', 'cdekdelivery'),
-                            Tariff::getName($tariff['tariff_code'], $tariff['tariff_name']),
-                            $minDay,
-                            $maxDay,
+                            'cdekdelivery',
                         ),
                         'cost'      => max($cost, 0),
                         'meta_data' => [
@@ -152,6 +146,7 @@ namespace Cdek\Actions {
                             MetaKeys::WIDTH        => $deliveryParam['packages']['width'],
                             MetaKeys::HEIGHT       => $deliveryParam['packages']['height'],
                             MetaKeys::OFFICE_CODE  => $package['destination'][MetaKeys::OFFICE_CODE] ?? null,
+                            MetaKeys::PERIOD       => ($minDay === $maxDay) ? $minDay : "{$minDay}-{$maxDay}",
                         ],
                     ];
                 }
