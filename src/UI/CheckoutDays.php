@@ -7,16 +7,15 @@ namespace {
 
 namespace Cdek\UI {
 
-    use Cdek\CdekApi;
     use Cdek\Config;
     use Cdek\Helpers\CheckoutHelper;
-    use Cdek\Model\Tariff;
+    use Cdek\MetaKeys;
 
-    class CheckoutMap
+    class CheckoutDays
     {
         public function __invoke($shippingMethodCurrent): void
         {
-            if (!is_checkout() || !$this->isTariffDestinationCdekOffice($shippingMethodCurrent)) {
+            if (!is_checkout() || !$this->isTariffDestinationCdek($shippingMethodCurrent)) {
                 return;
             }
 
@@ -27,24 +26,12 @@ namespace Cdek\UI {
                 return;
             }
 
-            $api = new CdekApi;
+            $period = $shippingMethodCurrent->get_meta_data()[MetaKeys::PERIOD];
 
-            $city = $api->getCityCode($cityInput, $postcodeInput);
-
-            if ($city === -1) {
-                $city = $api->getCityCode($cityInput, '');
-            }
-
-            $points = $city !== -1 ? $api->getOffices([
-                                                          'city_code' => $city,
-                                                      ])['body'] : '[]';
-
-            $mapAutoClose = CheckoutHelper::getMapAutoClose();
-
-            include __DIR__.'/../../templates/public/open-map.php';
+            include __DIR__.'/../../templates/public/delivery-days.php';
         }
 
-        private function isTariffDestinationCdekOffice($shippingMethodCurrent): bool
+        private function isTariffDestinationCdek($shippingMethodCurrent): bool
         {
             if ($shippingMethodCurrent->get_method_id() !== Config::DELIVERY_NAME) {
                 return false;
@@ -59,7 +46,7 @@ namespace Cdek\UI {
 
             $tariffCode = explode(':', $shippingMethodIdSelected[0])[1];
 
-            return Tariff::isTariffToOffice($tariffCode);
+            return !!$tariffCode;
         }
     }
 }
