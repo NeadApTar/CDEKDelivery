@@ -33,6 +33,7 @@ namespace Cdek {
     use Cdek\UI\AdminOrderProductFields;
     use Cdek\UI\AdminShippingFields;
     use Cdek\UI\CdekWidget;
+    use Cdek\UI\CheckoutDays;
     use Cdek\UI\CheckoutMap;
     use Cdek\UI\Frontend;
     use Cdek\Validator\CheckoutValidator;
@@ -242,6 +243,7 @@ namespace Cdek {
             add_action('woocommerce_store_api_checkout_update_order_meta', new CheckoutValidator(false));
             add_action('woocommerce_order_before_calculate_totals', new RecalculateShippingAction, 10, 2);
 
+            add_action('woocommerce_after_shipping_rate', new CheckoutDays);
             add_action('woocommerce_after_shipping_rate', new CheckoutMap);
             add_action('woocommerce_checkout_create_order', new SaveCustomCheckoutFieldsAction, 10, 2);
             add_action('woocommerce_order_status_changed', new DispatchOrderAutomationAction);
