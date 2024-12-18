@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace {
 
     defined('ABSPATH') or exit;
@@ -29,19 +31,16 @@ namespace Cdek\UI {
 
             $api = new CdekApi;
 
-            $city = $api->getCityCode($cityInput, $postcodeInput);
+            $city = $api->cityCodeGet($cityInput, $postcodeInput);
 
-            if ($city === -1) {
-                $city = $api->getCityCode($cityInput, '');
-            }
-
-            $points = $city !== -1 ? $api->getOffices([
-                                                          'city_code' => $city,
-                                                      ])['body'] : '[]';
-
-            $mapAutoClose = CheckoutHelper::getMapAutoClose();
-
-            include __DIR__.'/../../templates/public/open-map.php';
+            echo '<div class="open-pvz-btn" data-city="'.
+                 esc_attr($cityInput).
+                 '">'.
+                 '<script type="application/cdek-offices">'.
+                 wc_esc_json($city !== null ? $api->officeListRaw($city) : '[]', true).
+                 '</script><a>'.
+                 esc_html__('Choose pick-up', 'cdekdelivery').
+                 '</a></div><input name="office_code" class="cdek-office-code" type="hidden">';
         }
 
         private function isTariffDestinationCdekOffice($shippingMethodCurrent): bool
@@ -59,7 +58,7 @@ namespace Cdek\UI {
 
             $tariffCode = explode(':', $shippingMethodIdSelected[0])[1];
 
-            return Tariff::isTariffToOffice($tariffCode);
+            return Tariff::isToOffice((int)$tariffCode);
         }
     }
 }

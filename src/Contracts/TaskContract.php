@@ -1,115 +1,41 @@
 <?php
 
+declare(strict_types=1);
+
 namespace {
+
     defined('ABSPATH') or exit;
 }
 
 namespace Cdek\Contracts {
 
-    use Cdek\CdekCoreApi;
-    use Cdek\Config;
-    use Cdek\Exceptions\CdekApiException;
-    use Cdek\Exceptions\CdekScheduledTaskException;
-    use Cdek\Model\TaskOutputData;
-    use Cdek\Model\TaskData;
+    use Cdek\CoreApi;
+    use Iterator;
 
     abstract class TaskContract
     {
-        protected cdekCoreApi $cdekCoreApi;
-        protected ?array $taskMeta = [];
-        protected string $taskId;
-
-        public function __construct(string $taskId)
-        {
-            $this->cdekCoreApi = new CdekCoreApi();
-            $this->taskId = $taskId;
-        }
-
-        abstract protected static function getName(): string;
-
-        abstract function start(): void;
-
-        public static function init(string $taskId): void
-        {
-            $taskManager = new static($taskId);
-            $taskManager->start();
-        }
+        protected CoreApi $api;
+        protected ?array $taskMeta;
+        protected string $id;
 
         /**
-         * @return void
+         * @throws \Cdek\Exceptions\External\ApiException
+         * @throws \Cdek\Exceptions\CacheException
+         * @throws \Cdek\Exceptions\External\CoreAuthException
          */
-        public static function registerAction(): void
+        public function __invoke(string $id): void
         {
-            add_action(
-                sprintf('%s-%s', Config::TASK_MANAGER_HOOK_NAME, static::getName()),
-                [static::class, 'init'],
-                20,
-                1,
-            );
-        }
+            $this->api = new CoreApi;
+            $this->id  = $id;
 
-        /**
-         * @throws CdekApiException
-         * @throws CdekScheduledTaskException
-         * @throws \JsonException
-         */
-        protected function getTaskMeta(): array
-        {
-            if(empty($this->taskMeta)){
-                $this->initTaskData();
-            }
+            $this->taskMeta = $this->api->taskGet($this->id)['meta'];
 
-            return $this->taskMeta ?? [];
-        }
-
-        /**
-         * @throws CdekScheduledTaskException
-         * @throws CdekApiException
-         * @throws \JsonException
-         */
-        protected function initTaskData(array $data = null): void
-        {
-            $this->initData($this->cdekCoreApi->taskInfo($this->taskId, new TaskOutputData('success', $data)));
-        }
-
-        /**
-         * @param array $response
-         *
-         * @return void
-         */
-        protected function initData(array $response): void
-        {
-            if($this->cdekCoreApi->isServerError()){
-                $this->postponeTask();
-                return;
-            }
-
-            $this->taskMeta = $response['data']['meta'] ?? [];
-        }
-
-        protected function postponeTask(): void
-        {
-            $hooks = as_get_scheduled_actions(
-                [
-                    'hook' => sprintf('%s-%s', Config::TASK_MANAGER_HOOK_NAME, static::getName()),
-                    'status' => \ActionScheduler_Store::STATUS_PENDING,
-                ],
-            );
-
-            if(empty($hooks)){
-                return;
-            }
-
-            $hook = reset($hooks);
-
-            if(!$hook->get_schedule() instanceof \ActionScheduler_CronSchedule){
-                (new TaskData(
-                    [
-                        'id' => $this->taskId,
-                        'name' => sprintf('%s-%s', Config::TASK_MANAGER_HOOK_NAME, static::getName()),
-                    ],
-                ))->createTaskWork();
+            foreach ($this->process() as $result){
+                $this->api->taskResultCreate($this->id, $result);
             }
         }
+        abstract protected function process(): Iterator;
+
+        abstract public static function getName(): string;
     }
 }

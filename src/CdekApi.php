@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace {
 
     defined('ABSPATH') or exit;
@@ -7,298 +9,476 @@ namespace {
 
 namespace Cdek {
 
-    use Cdek\Contracts\TokenStorageContract;
     use Cdek\Enums\BarcodeFormat;
-    use Cdek\Exceptions\CdekApiException;
-    use Cdek\Exceptions\RestApiInvalidRequestException;
-    use Cdek\Helpers\DBTokenStorage;
-    use Cdek\Helpers\UrlHelper;
+    use Cdek\Exceptions\External\ApiException;
+    use Cdek\Exceptions\External\InvalidRequestException;
+    use Cdek\Exceptions\External\LegacyAuthException;
+    use Cdek\Helpers\LegacyTokenStorage;
     use Cdek\Transport\HttpClient;
-    use WC_Shipping_Method;
+    use Cdek\Transport\HttpResponse;
 
-    class CdekApi
+    /**
+     * @deprecated use CoreApi instead
+     */
+    final class CdekApi
     {
-        private const TOKEN_PATH = 'oauth/token';
-        private const REGION_PATH = 'location/cities';
-        private const ORDERS_PATH = 'orders/';
-        private const PVZ_PATH = 'deliverypoints';
-        private const CALC_LIST_PATH = 'calculator/tarifflist';
-        private const CALC_PATH = 'calculator/tariff';
-        private const WAYBILL_PATH = 'print/orders/';
-        private const BARCODE_PATH = 'print/barcodes/';
-        private const CALL_COURIER = 'intakes';
-        private const WEBHOOK_PATH = 'webhooks/';
-
         private string $apiUrl;
 
-        private string $clientId;
-        private string $clientSecret;
-        private WC_Shipping_Method $deliveryMethod;
+        private ShippingMethod $deliveryMethod;
 
-        private TokenStorageContract $tokenStorage;
-
-
-        public function __construct(?int $shippingInstanceId = null, ?TokenStorageContract $tokenStorage = null)
-        {
-            $this->deliveryMethod = Helper::getActualShippingMethod($shippingInstanceId);
-            $this->apiUrl = $this->getApiUrl();
-
-            if (!isset($_ENV['CDEK_REST_API']) && $this->deliveryMethod->get_option('test_mode') === 'yes') {
-                $this->clientId = Config::TEST_CLIENT_ID;
-                $this->clientSecret = Config::TEST_CLIENT_SECRET;
-            } else {
-                $this->clientId = $this->deliveryMethod->get_option('client_id');
-                $this->clientSecret = $this->deliveryMethod->get_option('client_secret');
-            }
-
-            $this->tokenStorage = $tokenStorage ?? new DBTokenStorage();
-        }
-
-        private function getApiUrl(): string
-        {
-            if ($this->deliveryMethod->get_option('test_mode') === 'yes') {
-                return $_ENV['CDEK_REST_API'] ?? Config::TEST_API_URL;
-            }
-
-            return Config::API_URL;
-        }
+        private LegacyTokenStorage $tokenStorage;
 
         /**
-         * @throws \Cdek\Exceptions\CdekApiException
+         * @param  int|\Cdek\ShippingMethod|null  $method
+         *
+         * @noinspection MissingParameterTypeDeclarationInspection
          */
-        final public function checkAuth(): bool
+        public function __construct($method = null)
         {
-            return (bool)$this->tokenStorage->getToken();
+            $this->deliveryMethod = is_a($method, ShippingMethod::class) ? $method : ShippingMethod::factory($method);
+            $this->tokenStorage   = new LegacyTokenStorage();
+
+            if (!$this->deliveryMethod->test_mode) {
+                $this->apiUrl = Config::API_URL;
+
+                return;
+            }
+
+            /** @noinspection GlobalVariableUsageInspection */
+            $this->apiUrl = $_ENV['CDEK_REST_API'] ?? Config::TEST_API_URL;
+        }
+
+        public function authGetError(): ?string
+        {
+            try {
+                $this->fetchToken();
+
+                return null;
+            } catch (LegacyAuthException $e) {
+                return $e->getData()['code'] ?? $e->getData()['error'] ?? 'unknown';
+            }
         }
 
         /**
-         * @throws \Cdek\Exceptions\CdekApiException
-         * @throws \JsonException
+         * @throws LegacyAuthException
          */
         public function fetchToken(): string
         {
-            $body = json_decode(HttpClient::sendRequest($this->getAuthUrl(), 'POST'), true);
-            if ($body === null || isset($body['error_description']) || isset($body['error'])) {
-                throw new CdekApiException('[CDEKDelivery] Failed to get the token',
-                                           'cdek_error.token.auth',
-                                           $body,
-                                           true);
-            }
-            return $body['access_token'];
-        }
-
-        private function getAuthUrl(): string
-        {
-            return sprintf('%s%s?%s',
-                           $this->apiUrl,
-                           self::TOKEN_PATH,
-                           http_build_query([
-                                                'grant_type'    => 'client_credentials',
-                                                'client_id'     => $this->clientId,
-                                                'client_secret' => $this->clientSecret,
-                                            ]));
-        }
-
-        /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
-         */
-        final public function getOrder(string $uuid)
-        {
-            $url = $this->apiUrl . self::ORDERS_PATH . $uuid;
-
-            return HttpClient::sendCdekRequest($url, 'GET', $this->tokenStorage->getToken());
-        }
-
-        /**
-         * @throws \Cdek\Exceptions\RestApiInvalidRequestException
-         * @throws \Cdek\Exceptions\CdekApiException
-         */
-        public function createOrder(array $params)
-        {
-            $url = $this->apiUrl . self::ORDERS_PATH;
-            $params['developer_key'] = Config::DEV_KEY;
-
-            $result = json_decode(HttpClient::sendCdekRequest($url, 'POST', $this->tokenStorage->getToken(), $params), true);
-
-            $request = $result['requests'][0];
-
-            if ($request['state'] === 'INVALID') {
-                throw new RestApiInvalidRequestException(self::ORDERS_PATH, $request['errors']);
+            /** @noinspection GlobalVariableUsageInspection */
+            if (!isset($_ENV['CDEK_REST_API']) && $this->deliveryMethod->test_mode) {
+                $clientId     = Config::TEST_CLIENT_ID;
+                $clientSecret = Config::TEST_CLIENT_SECRET;
+            } else {
+                $clientId     = $this->deliveryMethod->client_id;
+                $clientSecret = $this->deliveryMethod->client_secret;
             }
 
-            return $result;
+            try {
+                $body = HttpClient::processRequest(
+                    "{$this->apiUrl}oauth/token?".http_build_query([
+                        'grant_type'    => 'client_credentials',
+                        'client_id'     => $clientId,
+                        'client_secret' => $clientSecret,
+                    ]),
+                    'POST',
+                );
+
+                if (!isset($body->json()['access_token'])) {
+                    throw new LegacyAuthException([
+                        ...$body->json(),
+                        'host'   => parse_url($this->apiUrl, PHP_URL_HOST),
+                        'client' => $clientId,
+                    ]);
+                }
+
+                return $body->json()['access_token'];
+            } catch (ApiException $e) {
+                throw new LegacyAuthException(
+                    [...$e->getData(), 'host' => parse_url($this->apiUrl, PHP_URL_HOST), 'client' => $clientId],
+                );
+            }
         }
 
         /**
-         * @throws \Cdek\Exceptions\CdekApiException
+         * @throws LegacyAuthException
+         * @throws ApiException
          */
-        public function getFileByLink($link)
+        public function barcodeCreate(string $orderUuid): ?string
         {
-            return HttpClient::sendCdekRequest($link, 'GET', $this->tokenStorage->getToken(), null, true)['body'];
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}print/barcodes/",
+                'POST',
+                $this->tokenStorage->getToken(),
+                [
+                    'orders' => ['order_uuid' => $orderUuid],
+                    'format' => BarcodeFormat::getByIndex(
+                        (int)$this->deliveryMethod->get_option(
+                            'barcode_format',
+                            0,
+                        ),
+                    ),
+                ],
+            )->entity()['uuid'] ?? null;
         }
 
         /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
+         * @throws LegacyAuthException
+         * @throws ApiException
          */
-        public function createWaybill($orderUuid)
+        public function barcodeGet(string $uuid): ?array
         {
-            $url = $this->apiUrl . self::WAYBILL_PATH;
-
-            return HttpClient::sendCdekRequest($url, 'POST', $this->tokenStorage->getToken(), ['orders' => ['order_uuid' => $orderUuid]]);
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}print/barcodes/$uuid",
+                'GET',
+                $this->tokenStorage->getToken(),
+            )->entity();
         }
 
         /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
+         * @throws ApiException
+         * @throws LegacyAuthException
          */
-        public function createBarcode($orderUuid)
+        public function calculateGet(array $deliveryParam): ?float
         {
-            return HttpClient::sendCdekRequest($this->apiUrl . self::BARCODE_PATH, 'POST', $this->tokenStorage->getToken(), [
-                'orders' => ['order_uuid' => $orderUuid],
-                'format' => BarcodeFormat::getByIndex($this->deliveryMethod->get_option('barcode_format', 0)),
-            ]);
-        }
-
-        /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
-         */
-        public function getBarcode($uuid)
-        {
-            return HttpClient::sendCdekRequest($this->apiUrl . self::BARCODE_PATH . $uuid, 'GET', $this->tokenStorage->getToken());
-        }
-
-        /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
-         */
-        public function getWaybill($uuid)
-        {
-            return HttpClient::sendCdekRequest($this->apiUrl . self::WAYBILL_PATH . $uuid, 'GET', $this->tokenStorage->getToken());
-        }
-
-        /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
-         */
-        public function deleteOrder($uuid)
-        {
-            $url = $this->apiUrl . self::ORDERS_PATH . $uuid;
-
-            return HttpClient::sendCdekRequest($url, 'DELETE', $this->tokenStorage->getToken());
-        }
-
-        /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
-         */
-        public function calculateTariffList($deliveryParam)
-        {
-            $url = $this->apiUrl . self::CALC_LIST_PATH;
-
-            $request = [
-                'type'          => $deliveryParam['type'],
-                'from_location' => $deliveryParam['from'],
-                'to_location'   => $deliveryParam['to'],
-                'packages'      => $deliveryParam['packages'],
-            ];
-
-            return HttpClient::sendCdekRequest($url, 'POST', $this->tokenStorage->getToken(), $request);
-        }
-
-        /**
-         * @throws \Cdek\Exceptions\CdekApiException
-         * @throws \JsonException
-         */
-        public function calculateTariff($deliveryParam)
-        {
-            $url = $this->apiUrl . self::CALC_PATH;
-
             $request = [
                 'type'          => $deliveryParam['type'],
                 'from_location' => $deliveryParam['from'],
                 'tariff_code'   => $deliveryParam['tariff_code'],
                 'to_location'   => $deliveryParam['to'],
                 'packages'      => $deliveryParam['packages'],
-                'services'      => array_key_exists('services',
-                                                    $deliveryParam) ? $deliveryParam['services'] : [],
+                'services'      => array_key_exists('services', $deliveryParam) ? $deliveryParam['services'] : [],
             ];
 
-            return HttpClient::sendCdekRequest($url, 'POST', $this->tokenStorage->getToken(), $request);
+            if ($log = wc_get_logger()) {
+                $log->debug("Fetching tariff for {$deliveryParam['tariff_code']}", $request);
+            }
+
+            $resp = HttpClient::sendJsonRequest(
+                "{$this->apiUrl}calculator/tariff",
+                'POST',
+                $this->tokenStorage->getToken(),
+                $request,
+            )->json();
+
+            if (empty($resp['total_sum'])) {
+                if ($log = wc_get_logger()) {
+                    $log->debug("Got empty total sum for tariff {$deliveryParam['tariff_code']}");
+                }
+
+                return null;
+            }
+
+            $total = (float)$resp['total_sum'];
+
+            if ($log = wc_get_logger()) {
+                $log->debug("Got total for tariff {$deliveryParam['tariff_code']}: $total");
+            }
+
+            return $total;
         }
 
         /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
+         * @throws LegacyAuthException
+         * @throws ApiException
          */
-        public function getCityCode(string $city, ?string $postcode): int
+        public function calculateList(array $deliveryParam): array
         {
-            $url = $this->apiUrl . self::REGION_PATH;
+            $request = [
+                'type'          => $deliveryParam['type'],
+                'from_location' => $deliveryParam['from'],
+                'to_location'   => $deliveryParam['to'],
+                'packages'      => $deliveryParam['packages'],
+            ];
 
-            //по запросу к api v2 климовск записан как "климовск микрорайон" поэтому добавляем "микрорайон"
-            if (mb_strtolower($city) === 'климовск') {
-                $city .= ' микрорайон';
+            if ($log = wc_get_logger()) {
+                $log->debug('Fetching tarifflist', $request);
             }
 
-            $cityData = json_decode(HttpClient::sendCdekRequest($url, 'GET', $this->tokenStorage->getToken(),
-                                                                ['city' => $city, 'postal_code' => $postcode]), false, 512,
-                JSON_THROW_ON_ERROR);
+            $result = HttpClient::sendJsonRequest(
+                "{$this->apiUrl}calculator/tarifflist",
+                'POST',
+                $this->tokenStorage->getToken(),
+                $request,
+            )->json();
 
-            if (empty($cityData)) {
-                return -1;
-            }
-
-            return $cityData[0]->code;
-        }
-
-        /**
-         * @throws \Cdek\Exceptions\CdekApiException
-         * @throws \JsonException
-         */
-        public function getOffices($filter)
-        {
-            $url = $this->apiUrl . self::PVZ_PATH;
-
-            $result = HttpClient::sendCdekRequest($url, 'GET', $this->tokenStorage->getToken(), $filter, true);
-            if (!$result) {
-                return [
-                    'success' => false,
-                    'message' => esc_html__("In this locality, delivery is available only for \"door-to-door\" tariffs. Select another locality to gain access to \"from warehouse\" tariffs.", 'cdekdelivery'),
-                ];
+            if ($log = wc_get_logger()) {
+                $log->debug('Got tarifflist', $result);
             }
 
             return $result;
         }
 
         /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
+         * @throws LegacyAuthException
          */
-        public function callCourier($param)
+        public function cityCodeGet(string $city, string $postcode): ?string
         {
-            return HttpClient::sendCdekRequest($this->apiUrl . self::CALL_COURIER, 'POST', $this->tokenStorage->getToken(), $param);
+            //по запросу к api v2 климовск записан как "климовск микрорайон" поэтому добавляем "микрорайон"
+            if (mb_strtolower($city) === 'климовск') {
+                $city .= ' микрорайон';
+            }
+
+            return $this->cityCodeGetWithFallback($city, $postcode) ?: $this->cityCodeGetWithFallback($city);
         }
 
         /**
-         * @throws \Cdek\Exceptions\CdekApiException
-         * @throws \JsonException
+         * @throws LegacyAuthException
          */
-        public function courierInfo($uuid)
-        {
-            return HttpClient::sendCdekRequest($this->apiUrl . self::CALL_COURIER . '/' . $uuid, 'GET', $this->tokenStorage->getToken());
+        private function cityCodeGetWithFallback(
+            string $city,
+            ?string $postcode = null
+        ): ?string {
+            try {
+                if ($log = wc_get_logger()) {
+                    $log->debug('Fetching city', [
+                        'city'        => $city,
+                        'postal_code' => $postcode,
+                    ]);
+                }
+
+                $result = HttpClient::sendJsonRequest(
+                    "{$this->apiUrl}location/cities",
+                    'GET',
+                    $this->tokenStorage->getToken(),
+                    [
+                        'city'        => $city,
+                        'postal_code' => $postcode,
+                    ],
+                )->json();
+
+                $result = !empty($result[0]['code']) ? (string)$result[0]['code'] : null;
+
+                if ($log = wc_get_logger()) {
+                    $log->debug("Got city with code $result");
+                }
+
+                return $result;
+            } catch (ApiException $e) {
+                return null;
+            }
         }
 
         /**
-         * @throws \Cdek\Exceptions\CdekApiException
-         * @throws \JsonException
+         * @throws LegacyAuthException
          */
-        public function callCourierDelete($uuid)
+        public function cityGet(string $city, string $postcode, string $country = null): ?array
         {
-            return HttpClient::sendCdekRequest($this->apiUrl . self::CALL_COURIER . '/' . $uuid,
-                                               'DELETE',
-                                               $this->tokenStorage->getToken());
+            //по запросу к api v2 климовск записан как "климовск микрорайон" поэтому добавляем "микрорайон"
+            if (mb_strtolower($city) === 'климовск') {
+                $city .= ' микрорайон';
+            }
+
+            if ($log = wc_get_logger()) {
+                $log->debug('Fetching city', [
+                    'city'          => $city,
+                    'postal_code'   => $postcode,
+                    'country_codes' => $country === null ? null : [$country],
+                ]);
+            }
+
+            try {
+                $result = HttpClient::sendJsonRequest(
+                    "{$this->apiUrl}location/cities",
+                    'GET',
+                    $this->tokenStorage->getToken(),
+                    [
+                        'city'          => $city,
+                        'postal_code'   => $postcode,
+                        'country_codes' => $country === null ? null : [$country],
+                    ],
+                )->json();
+
+                $result = $result[0] ?: null;
+
+                if ($log = wc_get_logger()) {
+                    $log->debug('Got city', $result);
+                }
+
+                return $result;
+            } catch (ApiException $e) {
+                return null;
+            }
+        }
+
+        /**
+         * @throws LegacyAuthException
+         * @throws \Cdek\Exceptions\External\ApiException
+         */
+        public function citySuggest(string $q, string $country): array
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}location/suggest/cities",
+                'GET',
+                $this->tokenStorage->getToken(),
+                [
+                    'name'         => $q,
+                    'country_code' => $country,
+                ],
+            )->json();
+        }
+
+        /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
+        public function fileGetRaw(string $link): string
+        {
+            return HttpClient::sendJsonRequest($link, 'GET', $this->tokenStorage->getToken())->body();
+        }
+
+        /**
+         * @throws LegacyAuthException
+         * @throws ApiException
+         */
+        public function intakeCreate(array $param): HttpResponse
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}intakes",
+                'POST',
+                $this->tokenStorage->getToken(),
+                $param,
+            );
+        }
+
+        /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
+        public function intakeDelete(string $uuid): void
+        {
+            HttpClient::sendJsonRequest(
+                "{$this->apiUrl}intakes/$uuid",
+                'DELETE',
+                $this->tokenStorage->getToken(),
+            )->json();
+        }
+
+        /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
+        public function intakeGet(string $uuid): ?array
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}intakes/$uuid",
+                'GET',
+                $this->tokenStorage->getToken(),
+            )->entity();
+        }
+
+        /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
+        public function officeGet(string $code): ?array
+        {
+            $offices = HttpClient::sendJsonRequest(
+                "{$this->apiUrl}deliverypoints",
+                'GET',
+                $this->tokenStorage->getToken(),
+                ['code' => $code],
+            )->json();
+
+            if (empty($offices)) {
+                return null;
+            }
+
+            return $offices[0];
+        }
+
+        /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
+        public function officeListRaw(string $city): string
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}deliverypoints",
+                'GET',
+                $this->tokenStorage->getToken(),
+                ['city_code' => $city],
+            )->body();
+        }
+
+        /**
+         * @param  array  $params
+         *
+         * @return array
+         * @throws LegacyAuthException
+         * @throws ApiException
+         * @throws InvalidRequestException
+         */
+        public function orderCreate(array $params): ?string
+        {
+            if ($log = wc_get_logger()) {
+                $log->debug('Creating order', $params);
+            }
+
+            $result = HttpClient::sendJsonRequest(
+                "{$this->apiUrl}orders/",
+                'POST',
+                $this->tokenStorage->getToken(),
+                $params,
+            )->entity()['uuid'] ?? null;
+
+            if ($log = wc_get_logger()) {
+                $log->debug("Created order with uuid $result");
+            }
+
+            return $result;
+        }
+
+        /**
+         * @throws LegacyAuthException
+         * @throws ApiException
+         */
+        public function orderDelete(string $uuid): array
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}orders/$uuid",
+                'DELETE',
+                $this->tokenStorage->getToken(),
+            )->json();
+        }
+
+        /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
+        public function orderGet(string $uuid): HttpResponse
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}orders/$uuid",
+                'GET',
+                $this->tokenStorage->getToken(),
+            );
+        }
+
+        /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
+        public function waybillCreate(string $orderUuid): ?string
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}print/orders/",
+                'POST',
+                $this->tokenStorage->getToken(),
+                ['orders' => ['order_uuid' => $orderUuid]],
+            )->entity()['uuid'] ?? null;
+        }
+
+        /**
+         * @throws LegacyAuthException
+         * @throws ApiException
+         */
+        public function waybillGet(string $uuid): ?array
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}print/orders/$uuid",
+                'GET',
+                $this->tokenStorage->getToken(),
+            )->entity();
         }
 
         /**

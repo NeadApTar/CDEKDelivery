@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace {
 
     defined('ABSPATH') or exit;
@@ -8,20 +10,25 @@ namespace {
 namespace Cdek\UI {
 
     use Cdek\Config;
-    use Cdek\Helper;
-    use Cdek\Helpers\UrlHelper;
+    use Cdek\Helpers\UI;
     use Cdek\Loader;
+    use Cdek\Traits\CanBeCreated;
+    use WC_Admin_Settings;
 
     class Admin
     {
+        use CanBeCreated;
+
         public static function addPluginLinks(array $links): array
         {
-            array_unshift($links, '<a href="'.
-                                  esc_url(admin_url('admin.php?page=wc-settings&tab=shipping&section='.
-                                                    Config::DELIVERY_NAME)).
-                                  '">'.
-                                  esc_html__('Settings', 'cdekdelivery').
-                                  '</a>');
+            array_unshift(
+                $links,
+                '<a href="'.esc_url(
+                    admin_url(
+                        'admin.php?page=wc-settings&tab=shipping&section='.Config::DELIVERY_NAME,
+                    ),
+                ).'">'.esc_html__('Settings', 'cdekdelivery').'</a>',
+            );
 
             return $links;
         }
@@ -49,24 +56,19 @@ namespace Cdek\UI {
 
         public static function registerAdminScripts(): void
         {
+            global $current_section, $current_tab;
+
             // Not on Settings page.
-            if (!isset($_GET['tab']) || $_GET['tab'] !== 'shipping') {
+            if($current_section !== Config::DELIVERY_NAME || $current_tab !== 'shipping') {
                 return;
             }
 
-            Helper::enqueueScript('cdek-admin-settings', 'cdek-admin-settings', true);
-            wp_localize_script('cdek-admin-settings', 'cdek_admin_settings', [
-                'api' => [
-                    'offices'    => UrlHelper::buildRest('/get-offices'),
-                    'check_auth' => UrlHelper::buildRest('/check-auth'),
-                ],
-            ]);
+            UI::enqueueScript('cdek-admin-settings', 'cdek-admin-settings', true, false, true);
         }
 
         public function __invoke(): void
         {
-            add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'registerAdminScripts']);
+            add_action('woocommerce_settings_start', [__CLASS__, 'registerAdminScripts']);
         }
     }
-
 }

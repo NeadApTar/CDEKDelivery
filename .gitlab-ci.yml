@@ -26,13 +26,13 @@ build_tag:
     - yarn set version berry
   script:
     - sed -i "s/\(Version:\)\( *\).*/\1\2${RELEASE_VERSION}/" cdek.php
-    - sed -i "s/\(Stable tag:\)\( *\).*/\1\2${RELEASE_VERSION}/" readme.txt
+    - sed -i "s/\(Stable tag:\)\( *\).*/\1\2${RELEASE_VERSION}/" README.md
     - sed -i "s/\(Project-Id-Version:\)\( *\).*/\1\2CDEKDelivery ${RELEASE_VERSION}\"/" lang/cdekdelivery.pot
     - yarn
     - yarn build
     - rm -rf node_modules
-    - composer remove --no-install composer/installers
-    - composer i -a --no-dev
+    - composer remove --no-install --ignore-platform-req=ext-gmp composer/installers
+    - composer i -a --no-dev --ignore-platform-req=ext-gmp
     - composer archive -f zip --file=cdek
   artifacts:
     name: cdek-integration

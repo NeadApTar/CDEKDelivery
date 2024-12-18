@@ -12,10 +12,9 @@
  * Author: CDEKIT
  * Author URI: https://cdek.ru
  * WC requires at least: 6.9
- * WC tested up to: 8.0
+ * WC tested up to: 9.4
  * License: GPLv3
  */
-
 
 defined('ABSPATH') or exit;
 
@@ -28,4 +27,4 @@ if (!class_exists(\Cdek\Loader::class)) {
                   E_USER_ERROR);
 }
 
-(new \Cdek\Loader)(__FILE__);
+\Cdek\Loader::new()(__FILE__);
