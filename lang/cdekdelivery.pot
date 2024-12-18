@@ -575,6 +575,11 @@ msgstr ""
 msgid "Authorization failed"
 msgstr ""
 
+#. translators: %s: Delivery period to selected point
+#: src/UI/AdminShippingFields.php:137
+msgid "Delivery period: %s days"
+msgstr ""
+
 #. translators: %s: Code of selected tariff
 #: src/UI/AdminShippingFields.php:129
 msgid "Tariff code: %s"
