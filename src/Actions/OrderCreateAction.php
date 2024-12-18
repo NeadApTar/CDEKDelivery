@@ -185,7 +185,7 @@ namespace Cdek\Actions {
                 'type'            => Tariff::getType($this->tariff),
                 'tariff_code'     => $this->tariff,
                 'date_invoice'    => gmdate('Y-m-d'),
-                'number'          => $this->order->id,
+                'number'          => ($deliveryMethod->order_prefix ?: '') . $this->order->id,
                 'shipper_name'    => $deliveryMethod->shipper_name,
                 'shipper_address' => $deliveryMethod->shipper_address,
                 'sender'          => [
@@ -195,18 +195,19 @@ namespace Cdek\Actions {
                     'passport_organization'  => $deliveryMethod->passport_organization,
                     'passport_date_of_birth' => $deliveryMethod->passport_date_of_birth,
                     'tin'                    => $deliveryMethod->tin,
-                    'name'                   => $deliveryMethod->seller_name,
-                    'company'                => $deliveryMethod->seller_company,
-                    'email'                  => $deliveryMethod->seller_email,
+                    'name'                   => $deliveryMethod->sender_name,
+                    'company'                => $deliveryMethod->sender_company,
+                    'email'                  => $deliveryMethod->sender_email,
                     'phones'                 => [
-                        'number' => $deliveryMethod->seller_phone,
+                        'number' => $deliveryMethod->sender_phone,
                     ],
                 ],
                 'seller'          => [
+                    'name' => $deliveryMethod->seller_name,
+                    'inn' => $deliveryMethod->seller_inn,
+                    'ownership_form' => $deliveryMethod->seller_ownership_form,
                     'address' => $deliveryMethod->seller_address,
-                    'phones'  => [
-                        'number' => $deliveryMethod->seller_phone,
-                    ],
+                    'phone'  => $deliveryMethod->seller_phone,
                 ],
                 'recipient'       => [
                     'name'   => "{$this->order->first_name} {$this->order->last_name}",
