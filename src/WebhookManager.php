@@ -4,11 +4,7 @@ namespace {
     defined('ABSPATH') or exit;
 }
 
-namespace Cdek\Managers{
-
-    use Cdek\CdekApi;
-    use Cdek\Exceptions\CdekApiException;
-    use Cdek\Helper;
+namespace Cdek {
 
     class WebhookManager
     {
@@ -21,16 +17,15 @@ namespace Cdek\Managers{
         {
             try {
                 $data = (new CdekApi())->addWebhook();
-                $data = json_decode($data, true);
 
-                if ($data && isset($data['entity']['uuid'])) {
-                    Helper::getActualShippingMethod()->update_option('synchronization_webhook', $data['entity']['uuid']);
+                if ($data && isset($data['uuid'])) {
+                    ShippingMethod::factory()->synchronization_webhook = $data['uuid'];
                 } else {
-                    throw new RuntimeException('[CDEKDelivery] Что-то не так. Не удалось получить ID вебхука');
+                    if ($log = wc_get_logger()) {
+                        $log->debug('[CDEKDelivery] Что-то не так. Не удалось получить ID вебхука');
+                    }
                 }
-            } catch (CdekApiException $e) {
-
-            } catch (\JsonException $e) {
+            } catch (Exceptions\External\ApiException|Exceptions\External\LegacyAuthException $err) {
 
             }
         }
@@ -42,10 +37,8 @@ namespace Cdek\Managers{
         {
             try {
                 (new CdekApi())->deleteWebhook();
-                Helper::getActualShippingMethod()->update_option('synchronization_webhook', null);
-            } catch (CdekApiException $e) {
-
-            } catch (\JsonException $e) {
+                ShippingMethod::factory()->synchronization_webhook = null;
+            } catch (Exceptions\External\ApiException|Exceptions\External\LegacyAuthException $e) {
 
             }
         }
