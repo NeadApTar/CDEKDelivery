@@ -545,33 +545,38 @@ msgstr ""
 msgid "Authorization failed"
 msgstr ""
 
+#. translators: %s: Delivery period to selected point
+#: src/UI/AdminShippingFields.php:137
+msgid "Delivery period: %s days"
+msgstr ""
+
 #. translators: %s: Code of selected tariff
-#: src/UI/AdminShippingFields.php:125
+#: src/UI/AdminShippingFields.php:129
 msgid "Tariff code: %s"
 msgstr ""
 
 #. translators: %s: Code of selected point
-#: src/UI/AdminShippingFields.php:115
+#: src/UI/AdminShippingFields.php:119
 msgid "Selected pickup point: %s"
 msgstr ""
 
 #. translators: %s: Amount with measurement
-#: src/UI/AdminShippingFields.php:107
+#: src/UI/AdminShippingFields.php:111
 msgid "Height: %s"
 msgstr ""
 
 #. translators: %s: Amount with measurement
-#: src/UI/AdminShippingFields.php:99
+#: src/UI/AdminShippingFields.php:103
 msgid "Width: %s"
 msgstr ""
 
 #. translators: %s: Amount with measurement
-#: src/UI/AdminShippingFields.php:91
+#: src/UI/AdminShippingFields.php:95
 msgid "Length: %s"
 msgstr ""
 
 #. translators: %s: Amount with measurement
-#: src/UI/AdminShippingFields.php:83
+#: src/UI/AdminShippingFields.php:87
 msgid "Weight: %s"
 msgstr ""
 
