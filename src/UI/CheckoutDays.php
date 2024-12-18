@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace {
 
     defined('ABSPATH') or exit;
@@ -20,7 +22,6 @@ namespace Cdek\UI {
             }
 
             $cityInput     = CheckoutHelper::getValueFromCurrentSession('city');
-            $postcodeInput = CheckoutHelper::getValueFromCurrentSession('postcode');
 
             if (empty($cityInput)) {
                 return;
@@ -28,7 +29,7 @@ namespace Cdek\UI {
 
             $period = $shippingMethodCurrent->get_meta_data()[MetaKeys::PERIOD];
 
-            include __DIR__.'/../../templates/public/delivery-days.php';
+            echo "Количество дней доставки: {$period} дней";
         }
 
         private function isTariffDestinationCdek($shippingMethodCurrent): bool
