@@ -25,7 +25,6 @@ namespace Cdek {
     use Cdek\Helpers\CheckoutHelper;
     use Cdek\Helpers\DataCleaner;
     use Cdek\Traits\CanBeCreated;
-    use Cdek\Managers\WebhookManager;
     use Cdek\UI\Admin;
     use Cdek\UI\AdminNotices;
     use Cdek\UI\AdminShippingFields;
