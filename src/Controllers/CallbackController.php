@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cdek\Controllers;
 
+use Cdek\Actions\SyncOrderAction;
 use Cdek\Commands\TokensSyncCommand;
 use Cdek\Config;
 use Cdek\Helpers\Tokens;
@@ -34,12 +35,25 @@ class CallbackController
         return new WP_REST_Response(null, WP_Http::BAD_REQUEST);
     }
 
+    public static function updateStatus(WP_REST_Request $request): WP_REST_Response
+    {
+        (new SyncOrderAction())($request->get_json_params() ?? []);
+
+        return new WP_REST_Response(null, WP_Http::BAD_REQUEST);
+    }
+
     public function __invoke(): void
     {
         register_rest_route(Config::DELIVERY_NAME, '/cb', [
             'methods'             => WP_REST_Server::CREATABLE,
             'callback'            => [__CLASS__, 'handle'],
             'permission_callback' => [Tokens::class, 'checkIncomingRequest'],
+        ]);
+
+        register_rest_route(Config::DELIVERY_NAME, '/webhook', [
+            'methods'  => WP_REST_Server::CREATABLE,
+            'callback' => [__CLASS__, 'updateStatus'],
+            'permission_callback' => '__return_true',
         ]);
     }
 }
