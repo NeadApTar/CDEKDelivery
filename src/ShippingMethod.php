@@ -218,6 +218,12 @@ namespace Cdek {
         {
             FlushTokenCacheAction::new()();
 
+            if ($this->get_option('synchronization_statuses') === 'yes') {
+                WebhookManager::update();
+            } else {
+                WebhookManager::delete();
+            }
+
             return parent::process_admin_options();
         }
     }

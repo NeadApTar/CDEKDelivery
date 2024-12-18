@@ -11,28 +11,11 @@ namespace Cdek\Traits {
 
     use Cdek\Enums\BarcodeFormat;
     use Cdek\Loader;
-    use Cdek\Managers\WebhookManager;
     use Cdek\Model\Tariff;
 
     trait SettingsFields
     {
         private static bool $settingsMutex = false;
-
-//        final public function init(): void
-//        {
-//            add_action("woocommerce_update_options_shipping_$this->id", [$this, 'process_admin_options']);
-//        }
-//
-//        public function process_admin_options(): void
-//        {
-//            parent::process_admin_options();
-//
-//            if ($this->get_option('synchronization_statuses') === 'yes') {
-//                WebhookManager::update();
-//            } else {
-//                WebhookManager::delete();
-//            }
-//        }
 
         final public function init_form_fields(): void
         {
