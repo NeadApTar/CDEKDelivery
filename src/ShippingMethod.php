@@ -23,12 +23,17 @@ namespace Cdek {
      * @property string $client_id
      * @property string $client_secret
      * @property string $yandex_map_api_key
-     * @property string $seller_company
+     * @property string $sender_company
+     * @property string $order_prefix
+     * @property string $sender_name
+     * @property string $sender_phone
+     * @property string $sender_email
      * @property string $seller_name
+     * @property string $seller_inn
      * @property string $seller_phone
-     * @property string $seller_email
-     * @property bool $international_mode
+     * @property string $seller_ownership_form
      * @property string $seller_address
+     * @property bool $international_mode
      * @property string $shipper_name
      * @property string $shipper_address
      * @property string $passport_series
@@ -39,6 +44,15 @@ namespace Cdek {
      * @property string $passport_date_of_birth
      * @property bool $automate_orders
      * @property string[] $automate_wait_gateways
+     * @property bool $synchronization_statuses
+     * @property string $synchronization_webhook
+     * @property string $status_exported
+     * @property string $status_warehouse
+     * @property string $status_in_transit
+     * @property string $status_in_pvz
+     * @property string $status_courier
+     * @property string $status_delivered
+     * @property string $status_returned
      * @property string[] $tariff_list
      * @property string $tariff_name
      * @property bool $has_packages_mode
