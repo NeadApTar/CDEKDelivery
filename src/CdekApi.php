@@ -482,38 +482,51 @@ namespace Cdek {
         }
 
         /**
-         * @throws \Cdek\Exceptions\CdekApiException
-         * @throws \JsonException
+         * @throws ApiException
+         * @throws LegacyAuthException
          */
-        public function addWebhook()
+        public function addWebhook(): ?array
         {
-            $url = $this->apiUrl . self::WEBHOOK_PATH;
-            $params = [
-                'url'       => rest_url(Config::DELIVERY_NAME . '/webhook'),
-                'type'      => 'ORDER_STATUS',
-                'retryable' => true,
-            ];
-        	return HttpClient::sendCdekRequest($url, 'POST', $this->tokenStorage->getToken(), $params );
+        	return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}webhooks",
+                'POST',
+                $this->tokenStorage->getToken(),
+                [
+                    'url'       => rest_url(Config::DELIVERY_NAME . '/webhook'),
+                    'type'      => 'ORDER_STATUS',
+                    'retryable' => true,
+                ]
+            )->entity();
         }
 
         /**
-         * @throws \JsonException
-         * @throws \Cdek\Exceptions\CdekApiException
+         * @throws ApiException
+         * @throws LegacyAuthException
          */
-        public function getWebhook()
+        public function getWebhook(): ?array
         {
-            $url = $this->apiUrl . self::WEBHOOK_PATH . $this->deliveryMethod->get_option('synchronization_webhook');
-            return HttpClient::sendCdekRequest($url, 'GET', $this->tokenStorage->getToken());
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}webhooks/{$this->deliveryMethod->synchronization_webhook}",
+                'GET',
+                $this->tokenStorage->getToken()
+            )->entity();
         }
 
         /**
-         * @throws \Cdek\Exceptions\CdekApiException
-         * @throws \JsonException
+         * @throws ApiException
+         * @throws LegacyAuthException
          */
-        public function deleteWebhook()
+        public function deleteWebhook(): array
         {
-            $url = $this->apiUrl . self::WEBHOOK_PATH . $this->deliveryMethod->get_option('synchronization_webhook');
-            return HttpClient::sendCdekRequest($url, 'DELETE', $this->tokenStorage->getToken());
+            if ($this->deliveryMethod->synchronization_webhook) {
+                return HttpClient::sendJsonRequest(
+                    "{$this->apiUrl}webhooks/{$this->deliveryMethod->synchronization_webhook}",
+                    'DELETE',
+                    $this->tokenStorage->getToken()
+                )->json();
+            }
+
+            return [];
         }
     }
 }
