@@ -75,10 +75,14 @@ namespace Cdek\UI{
                     case MetaKeys::TARIFF_CODE:
                         self::renderTariff($meta['value']);
                         break;
-                    default:
-                }
+                    case 'period':
+                case MetaKeys::PERIOD:
+                    self::renderPeriod($meta['value']);
+                    break;
+                default:
             }
         }
+    }
 
         private static function renderWeight($value): void
         {
@@ -128,6 +132,15 @@ namespace Cdek\UI{
             echo '<div>'.sprintf(
                     esc_html__(/* translators: %s: Code of selected tariff */ 'Tariff code: %s', 'cdekdelivery'),
                     esc_html($tariffCode),
+                ).'</div>';
+        }
+
+
+        private static function renderPeriod($period): void
+        {
+            echo '<div>'.sprintf(
+                    esc_html__(/* translators: %s: Delivery period to selected point */ 'Delivery period: %s days', 'cdekdelivery'),
+                    esc_html($period),
                 ).'</div>';
         }
     }
