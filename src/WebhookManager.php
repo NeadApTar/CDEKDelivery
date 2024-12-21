@@ -20,6 +20,9 @@ namespace Cdek {
 
                 if ($data && isset($data['uuid'])) {
                     ShippingMethod::factory()->synchronization_webhook = $data['uuid'];
+                    if ($log = wc_get_logger()) {
+                        $log->debug('[CDEKDelivery] Сохранение ID Webhook\'а', $data);
+                    }
                 } else {
                     if ($log = wc_get_logger()) {
                         $log->debug('[CDEKDelivery] Что-то не так. Не удалось получить ID вебхука');
@@ -36,8 +39,11 @@ namespace Cdek {
         public static function delete()
         {
             try {
-                (new CdekApi())->deleteWebhook();
+                $data = (new CdekApi())->deleteWebhook();
                 ShippingMethod::factory()->synchronization_webhook = null;
+                if ($log = wc_get_logger()) {
+                    $log->debug('[CDEKDelivery] Удаление ID Webhook\'а', $data);
+                }
             } catch (Exceptions\External\ApiException|Exceptions\External\LegacyAuthException $e) {
 
             }
