@@ -84,17 +84,19 @@ namespace Cdek {
                 );
 
                 if (!isset($body->json()['access_token'])) {
-                    throw new LegacyAuthException([
-                        ...$body->json(),
+                    throw new LegacyAuthException(array_merge($body->json(), [
                         'host'   => parse_url($this->apiUrl, PHP_URL_HOST),
                         'client' => $clientId,
-                    ]);
+                    ]));
                 }
 
                 return $body->json()['access_token'];
             } catch (ApiException $e) {
                 throw new LegacyAuthException(
-                    [...$e->getData(), 'host' => parse_url($this->apiUrl, PHP_URL_HOST), 'client' => $clientId],
+                    array_merge($e->getData(), [
+                        'host'   => parse_url($this->apiUrl, PHP_URL_HOST),
+                        'client' => $clientId,
+                    ]),
                 );
             }
         }
@@ -211,7 +213,7 @@ namespace Cdek {
         /**
          * @throws LegacyAuthException
          */
-        public function cityCodeGet(string $city, string $postcode): ?string
+        public function cityCodeGet(string $city, ?string $postcode = null): ?string
         {
             //по запросу к api v2 климовск записан как "климовск микрорайон" поэтому добавляем "микрорайон"
             if (mb_strtolower($city) === 'климовск') {
