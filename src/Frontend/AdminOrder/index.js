@@ -115,6 +115,10 @@ $(document).ready(() => {
 
           packageList.push(packageData);
 
+          metaBox.find('input[name=length]').val('');
+          metaBox.find('input[name=width]').val('');
+          metaBox.find('input[name=height]').val('');
+
           metaBox.find('.create .list')
             .append($('<p></p>')
               .text(__('Package', 'cdekdelivery') +
