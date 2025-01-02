@@ -7,40 +7,40 @@ namespace {
 
 namespace Cdek\Actions {
 
-    use Cdek\CdekApi;
-    use Cdek\Config;
-    use Cdek\Helper;
-    use RuntimeException;
+    use Cdek\ShippingMethod;
 
     class SyncOrderAction
     {
-        private CdekApi $api;
         private array $data;
         private \WC_Order $order;
+        private const META_KEY = 'order_data';
+        private ShippingMethod $shippingMethod;
 
         public function __construct()
         {
-            $this->api = new CdekApi;
+            $this->shippingMethod = ShippingMethod::factory();
         }
 
         public function __invoke(array $dataJson): array
         {
             $this->data = $dataJson;
 
-            $this->getOrder();
-            $this->updateOrderStatus();
+            if ($this->getOrder()) {
+                $this->updateOrderStatus();
+            }
 
             return ['state' => 'OK'];
         }
 
-        private function getOrder()
+        private function getOrder(): bool
         {
             if (empty($this->data['attributes'])) {
-                throw new RuntimeException('[CDEKDelivery] Недопустимые атрибуты запроса.');
+                wc_get_logger()->debug('Недопустимые атрибуты запроса.', $this->data);
+                return false;
             }
 
             $order_id = $this->data['attributes']['number'];
-            $order_prefix = Helper::getActualShippingMethod()->get_option('order_prefix');
+            $order_prefix = $this->shippingMethod->order_prefix;
 
             if (!empty($order_prefix)) {
                 $order_id = str_replace($order_prefix, '', $order_id);
@@ -49,13 +49,22 @@ namespace Cdek\Actions {
             $order = wc_get_order($order_id);
 
             if (!$order) {
-                throw new RuntimeException(sprintf('[CDEKDelivery] Заказ %s не найден', $order_id ));
+                wc_get_logger()->debug("Заказ {$order_id} не найден");
+                return false;
             }
-            if ($this->data['uuid'] !== $order->get_meta(Config::META_KEY)['order_uuid']) {
-                throw new RuntimeException('[CDEKDelivery] Некорректный UUID заказа.');
+
+            $order_meta = $order->get_meta(self::META_KEY);
+
+            if (!in_array($this->data['uuid'], [$order_meta['order_uuid'], $order_meta['uuid']])) {
+                wc_get_logger()->debug("Некорректный UUID для заказа #{$order_id}", [
+                    'data_uuid' => $this->data['uuid'],
+                    'order_meta' => $order_meta,
+                ]);
+                return false;
             }
 
             $this->order = $order;
+            return true;
         }
 
         private function updateOrderStatus()
@@ -64,10 +73,10 @@ namespace Cdek\Actions {
 
             switch ($this->data['attributes']['code']) {
                 case 'CREATED':
-                    $status = Helper::getActualShippingMethod()->get_option('status_exported');
+                    $status = $this->shippingMethod->status_exported;
                     break;
                 case 'RECEIVED_AT_SHIPMENT_WAREHOUSE':
-                    $status = Helper::getActualShippingMethod()->get_option('status_warehouse');
+                    $status = $this->shippingMethod->status_warehouse;
                     break;
                 case 'READY_TO_SHIP_AT_SENDING_OFFICE':
                 case 'READY_FOR_SHIPMENT_IN_TRANSIT_CITY':
@@ -90,28 +99,32 @@ namespace Cdek\Actions {
                 case 'PASSED_TO_TRANSIT_CARRIER':
                 case 'IN_CUSTOMS_LOCAL':
                 case 'CUSTOMS_COMPLETE':
-                    $status = Helper::getActualShippingMethod()->get_option('status_in_transit');
+                    $status = $this->shippingMethod->status_in_transit;
                     break;
                 case 'ACCEPTED_AT_PICK_UP_POINT':
                 case 'POSTOMAT_POSTED':
-                    $status = Helper::getActualShippingMethod()->get_option('status_in_pvz');
+                    $status = $this->shippingMethod->status_in_pvz;
                     break;
                 case 'TAKEN_BY_COURIER':
-                    $status = Helper::getActualShippingMethod()->get_option('status_courier');
+                    $status = $this->shippingMethod->status_courier;
                     break;
                 case 'POSTOMAT_RECEIVED':
                 case 'DELIVERED':
-                    $status = Helper::getActualShippingMethod()->get_option('status_delivered');
+                    $status = $this->shippingMethod->status_delivered;
                     break;
                 case 'POSTOMAT_SEIZED':
                 case 'NOT_DELIVERED':
-                    $status = Helper::getActualShippingMethod()->get_option('status_returned');
+                    $status = $this->shippingMethod->status_returned;
                     break;
             }
 
             $order_status = 'wc-' . $this->order->get_status();
             if (($status !== $order_status) && ($status !== 'none')) {
                 $this->order->update_status($status, '[CDEKDelivery]');
+                wc_get_logger()->debug("Заказ #{$this->order->get_id()} синхронизирован", [
+                    'old_status' => $order_status,
+                    'new_status' => $status,
+                ]);
             }
         }
     }
