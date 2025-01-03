@@ -80,6 +80,7 @@ namespace Cdek {
     {
         use SettingsFields;
 
+        private static ?ShippingMethod $instance = null;
         private const DEFAULTS
             = [
                 'automate_wait_gateways' => [],
@@ -99,6 +100,7 @@ namespace Cdek {
             ];
             $this->enabled            = 'yes';
             $this->init();
+            static::$instance = $this;
         }
 
         final public function init(): void
@@ -128,7 +130,7 @@ namespace Cdek {
                 }
             }
 
-            return WC()->shipping()->load_shipping_methods()[Config::DELIVERY_NAME];
+            return static::$instance ?: WC()->shipping()->load_shipping_methods()[Config::DELIVERY_NAME];
         }
 
         /** @noinspection MissingReturnTypeInspection */

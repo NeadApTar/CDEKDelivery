@@ -312,6 +312,8 @@ namespace Cdek\Actions {
                         $shouldConvert,
                     );
 
+                    $cost /= $qty;
+
                     if ($shouldPay !== null) {
                         if ($shouldPay !== 0) {
                             $paymentValue = (int)(($shouldPay / 100) * $cost);
