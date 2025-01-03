@@ -18,7 +18,15 @@ namespace Cdek\UI {
     {
         public function __invoke($shippingMethodCurrent): void
         {
-            if (!is_checkout() || !$this->isTariffDestinationCdekOffice($shippingMethodCurrent)) {
+            if (!is_checkout()) {
+                return;
+            }
+
+            if (!$tariffCode = $this->getTariffCode($shippingMethodCurrent)) {
+                return;
+            };
+
+            if (!Tariff::isToOffice($tariffCode)) {
                 return;
             }
 
@@ -35,6 +43,8 @@ namespace Cdek\UI {
 
             echo '<div class="open-pvz-btn" data-city="'.
                  esc_attr($cityInput).
+                 '" data-type="'.
+                 esc_attr($this->getTariffType($tariffCode)).
                  '">'.
                  '<script type="application/cdek-offices">'.
                  wc_esc_json($city !== null ? $api->officeListRaw($city) : '[]', true).
@@ -43,22 +53,25 @@ namespace Cdek\UI {
                  '</a></div><input name="office_code" class="cdek-office-code" type="hidden">';
         }
 
-        private function isTariffDestinationCdekOffice($shippingMethodCurrent): bool
+        private function getTariffCode($shippingMethodCurrent): ?int
         {
             if ($shippingMethodCurrent->get_method_id() !== Config::DELIVERY_NAME) {
-                return false;
+                return null;
             }
 
             $shippingMethodIdSelected = WC()->session->get('chosen_shipping_methods', []);
 
             if (empty($shippingMethodIdSelected[0]) ||
                 $shippingMethodCurrent->get_id() !== $shippingMethodIdSelected[0]) {
-                return false;
+                return null;
             }
 
-            $tariffCode = explode(':', $shippingMethodIdSelected[0])[1];
+            return (int)explode(':', $shippingMethodIdSelected[0])[1];
+        }
 
-            return Tariff::isToOffice((int)$tariffCode);
+        private function getTariffType($tariffCode): string
+        {
+            return Tariff::isToPickup($tariffCode) ? 'POSTAMAT' : 'PVZ';
         }
     }
 }
