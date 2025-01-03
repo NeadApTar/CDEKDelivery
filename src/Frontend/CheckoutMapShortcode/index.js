@@ -156,12 +156,16 @@ $(document.body)
                   lang: window.cdek.lang,
                   defaultLocation: el.data('city'),
                   officesRaw: points,
+                  forceFilters: {
+                      type: el.data('type'),
+                  },
                   hideDeliveryOptions: {
                       door: true,
                   },
                   onChoose,
               });
           } else {
+              widget.app.config.globalProperties.$pinia.state.value.search.filters.type = el.data('type');
               widget.updateOfficesRaw(points);
               widget.updateLocation(el.data('city'));
           }
