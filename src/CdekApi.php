@@ -487,6 +487,19 @@ namespace Cdek {
             )->entity();
         }
 
+    /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
+        public function getAllWebhooks(): ?array
+        {
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}webhooks",
+                'GET',
+                $this->tokenStorage->getToken()
+            )->json();
+        }
+
         /**
          * @throws ApiException
          * @throws LegacyAuthException

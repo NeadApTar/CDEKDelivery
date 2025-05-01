@@ -49,12 +49,27 @@ namespace Cdek {
             }
         }
 
+        public static function check(): bool
+        {
+            try {
+                $data = (new CdekApi())->getWebhook();
+                if ($data['uuid'] === ShippingMethod::factory()->synchronization_webhook) {
+                    return true;
+                }
+            } catch (Exceptions\External\ApiException|Exceptions\External\LegacyAuthException $e) {
+
+            }
+            return false;
+        }
+
         /**
          * Update the webhook ID
          */
         public static function update()
         {
-            self::delete();
+            if (self::check()) {
+                self::delete();
+            }
             self::add();
         }
     }

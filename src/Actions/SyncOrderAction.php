@@ -26,10 +26,12 @@ namespace Cdek\Actions {
             $this->data = $dataJson;
 
             if ($this->getOrder()) {
-                $this->updateOrderStatus();
+                return $this->updateOrderStatus();
             }
 
-            return ['state' => 'OK'];
+            return [
+                'message' => 'Заказ не найден!'
+            ];
         }
 
         private function getOrder(): bool
@@ -49,7 +51,10 @@ namespace Cdek\Actions {
             $order = wc_get_order($order_id);
 
             if (!$order) {
-                wc_get_logger()->debug("Заказ {$order_id} не найден");
+                wc_get_logger()->debug("Заказ {$order_id} не найден", [
+                    'order_id' => $this->data['attributes']['number'],
+                    'cdek_number' => $this->data['attributes']['cdek_number']
+                ]);
                 return false;
             }
 
@@ -67,7 +72,7 @@ namespace Cdek\Actions {
             return true;
         }
 
-        private function updateOrderStatus()
+        private function updateOrderStatus(): array
         {
             $status = 'none';
 
@@ -118,14 +123,34 @@ namespace Cdek\Actions {
                     break;
             }
 
-            $order_status = 'wc-' . $this->order->get_status();
-            if (($status !== $order_status) && ($status !== 'none')) {
-                $this->order->update_status($status, '[CDEKDelivery]');
-                wc_get_logger()->debug("Заказ #{$this->order->get_id()} синхронизирован", [
-                    'old_status' => $order_status,
-                    'new_status' => $status,
-                ]);
+            if ($status === 'none') {
+                return [
+                    'message' => "{$this->data['attributes']['code']} не имеет привязанного статуса для заказа"
+                ];
             }
+
+            $order_status = 'wc-' . $this->order->get_status();
+
+            if ($status === $order_status) {
+                return [
+                    'message' => "Заказ #{$this->order->get_id()} имеет актуальный статус",
+                    'status' => [
+                        'current' => $order_status,
+                        'new' => $status
+                    ]
+                ];
+            }
+
+            $this->order->update_status($status, '[CDEKDelivery]');
+            $data = [
+                'message' => "Заказ #{$this->order->get_id()} синхронизирован",
+                'status' => [
+                    'old' => $order_status,
+                    'new' => $status,
+                ]
+            ];
+            wc_get_logger()->debug($data['message'], $data['status']);
+            return $data;
         }
     }
 }
