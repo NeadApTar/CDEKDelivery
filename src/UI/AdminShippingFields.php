@@ -76,72 +76,73 @@ namespace Cdek\UI{
                         self::renderTariff($meta['value']);
                         break;
                     case 'period':
-                case MetaKeys::PERIOD:
-                    self::renderPeriod($meta['value']);
-                    break;
-                default:
+                    case MetaKeys::PERIOD:
+                        self::renderPeriod($meta['value']);
+                        break;
+                    default:
+                }
             }
         }
-    }
 
         private static function renderWeight($value): void
         {
             $measurement = get_option('woocommerce_weight_unit');
-            echo '<div>'.sprintf(
+            echo '<div>' . sprintf(
                     esc_html__( /* translators: %s: Amount with measurement */ 'Weight: %s', 'cdekdelivery'),
-                    esc_html($value.$measurement),
-                ).'</div>';
+                    esc_html($value . $measurement),
+                ) . '</div>';
         }
 
         private static function renderLength(string $length): void
         {
-            echo '<div>'.sprintf(
+            echo '<div>' . sprintf(
                     esc_html__(/* translators: %s: Amount with measurement */ 'Length: %s', 'cdekdelivery'),
                     esc_html($length),
-                ).'</div>';
+                ) . '</div>';
         }
 
         private static function renderWidth(string $width): void
         {
-            echo '<div>'.sprintf(
+            echo '<div>' . sprintf(
                     esc_html__(/* translators: %s: Amount with measurement */ 'Width: %s', 'cdekdelivery'),
                     esc_html($width),
-                ).'</div>';
+                ) . '</div>';
         }
 
         private static function renderHeight(string $height): void
         {
-            echo '<div>'.sprintf(
+            echo '<div>' . sprintf(
                     esc_html__(/* translators: %s: Amount with measurement */ 'Height: %s', 'cdekdelivery'),
                     esc_html($height),
-                ).'</div>';
+                ) . '</div>';
         }
 
         private static function renderOffice($value): void
         {
-            echo '<div>'.sprintf(
+            echo '<div>' . sprintf(
                     esc_html__(/* translators: %s: Code of selected point */ 'Selected pickup point: %s',
                                                                              'cdekdelivery',
                     ),
                     esc_html($value),
-                ).'</div>';
+                ) . '</div>';
         }
 
         private static function renderTariff($tariffCode): void
         {
-            echo '<div>'.sprintf(
+            echo '<div>' . sprintf(
                     esc_html__(/* translators: %s: Code of selected tariff */ 'Tariff code: %s', 'cdekdelivery'),
                     esc_html($tariffCode),
-                ).'</div>';
+                ) . '</div>';
         }
 
 
         private static function renderPeriod($period): void
         {
-            echo '<div>'.sprintf(
-                    esc_html__(/* translators: %s: Delivery period to selected point */ 'Delivery period: %s days', 'cdekdelivery'),
+            echo '<div>' . sprintf(
+                    esc_html__(/* translators: %s: Delivery period to selected point */ 'Delivery period: %s days',
+                                                                                        'cdekdelivery'),
                     esc_html($period),
-                ).'</div>';
+                ) .'</div>';
         }
     }
 }
