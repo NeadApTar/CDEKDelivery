@@ -38,11 +38,13 @@ namespace Cdek\Helpers {
             $hiddenMeta[] = MetaKeys::JEWEL_UIN;
             $hiddenMeta[] = MetaKeys::POSTAL;
             $hiddenMeta[] = MetaKeys::CITY;
+            $hiddenMeta[] = MetaKeys::PERIOD;
 
             if (self::isOldOrderPage() || self::isNewOrderPage()) {
                 $hiddenMeta[] = 'tariff_code';
                 $hiddenMeta[] = 'tariff_type';
                 $hiddenMeta[] = 'tariff_mode';
+                $hiddenMeta[] = 'period';
                 $hiddenMeta[] = 'length';
                 $hiddenMeta[] = 'width';
                 $hiddenMeta[] = 'height';
