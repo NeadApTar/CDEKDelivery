@@ -21,7 +21,7 @@ namespace Cdek\UI {
                 return;
             }
 
-            $cityInput     = CheckoutHelper::getValueFromCurrentSession('city');
+            $cityInput = CheckoutHelper::getCurrentValue('city');
 
             if (empty($cityInput)) {
                 return;
@@ -29,7 +29,7 @@ namespace Cdek\UI {
 
             $period = $shippingMethodCurrent->get_meta_data()[MetaKeys::PERIOD];
 
-            echo "Количество дней доставки: {$period} дней";
+            echo "Срок доставки: {$this->formatPeriodDays($period)}";
         }
 
         private function isTariffDestinationCdek($shippingMethodCurrent): bool
@@ -49,5 +49,26 @@ namespace Cdek\UI {
 
             return !!$tariffCode;
         }
+
+        private function formatPeriodDays(string $period): string
+        {
+            if (strpos($period, '-') !== false) {
+                $days = explode('-', $period);
+                $lastNumber = (int)$days[1];
+            } else {
+                $lastNumber = (int)$period;
+            }
+
+            if ($lastNumber === 1) {
+                $suffix = 'день';
+            } elseif ($lastNumber >= 2 && $lastNumber <= 4) {
+                $suffix = 'дня';
+            } else {
+                $suffix = 'дней';
+            }
+
+            return "{$period} {$suffix}";
+        }
+
     }
 }
