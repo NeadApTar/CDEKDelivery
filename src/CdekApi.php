@@ -478,10 +478,10 @@ namespace Cdek {
          * @throws LegacyAuthException
          * @throws ApiException
          */
-        public function getWebhook(): ?array
+        public function getWebhook(string $uuid): ?array
         {
             return HttpClient::sendJsonRequest(
-                "{$this->apiUrl}webhooks/{$this->deliveryMethod->synchronization_webhook}",
+                "{$this->apiUrl}webhooks/$uuid",
                 'GET',
                 $this->tokenStorage->getToken()
             )->entity();
@@ -497,24 +497,20 @@ namespace Cdek {
                 "{$this->apiUrl}webhooks",
                 'GET',
                 $this->tokenStorage->getToken()
-            )->json();
+            )->json() ?? null;
         }
 
         /**
          * @throws ApiException
          * @throws LegacyAuthException
          */
-        public function deleteWebhook(): array
+        public function deleteWebhook(string $uuid): ?array
         {
-            if ($this->deliveryMethod->synchronization_webhook) {
-                return HttpClient::sendJsonRequest(
-                    "{$this->apiUrl}webhooks/{$this->deliveryMethod->synchronization_webhook}",
-                    'DELETE',
-                    $this->tokenStorage->getToken()
-                )->json();
-            }
-
-            return [];
+            return HttpClient::sendJsonRequest(
+                "{$this->apiUrl}webhooks/$uuid",
+                'DELETE',
+                $this->tokenStorage->getToken()
+            )->json() ?? null;
         }
     }
 }
