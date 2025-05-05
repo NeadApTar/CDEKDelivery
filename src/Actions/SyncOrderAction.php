@@ -7,6 +7,7 @@ namespace {
 
 namespace Cdek\Actions {
 
+    use Cdek\Helpers\Logger;
     use Cdek\ShippingMethod;
 
     class SyncOrderAction
@@ -37,11 +38,13 @@ namespace Cdek\Actions {
         private function getOrder(): bool
         {
             if (empty($this->data['attributes'])) {
-                wc_get_logger()->debug('Недопустимые атрибуты запроса.', $this->data);
+                Logger::debug('Webhook: Недопустимые атрибуты запроса.', $this->data);
                 return false;
             }
 
             $order_id = $this->data['attributes']['number'];
+            $cdek_number = $this->data['attributes']['cdek_number'];
+            $cdek_uuid = $this->data['uuid'];
             $order_prefix = $this->shippingMethod->order_prefix;
 
             if (!empty($order_prefix)) {
@@ -51,18 +54,19 @@ namespace Cdek\Actions {
             $order = wc_get_order($order_id);
 
             if (!$order) {
-                wc_get_logger()->debug("Заказ {$order_id} не найден", [
+                Logger::debug("Webhook: Заказ {$order_id} не найден", [
                     'order_id' => $this->data['attributes']['number'],
-                    'cdek_number' => $this->data['attributes']['cdek_number']
+                    'cdek_number' => $cdek_number
                 ]);
                 return false;
             }
 
             $order_meta = $order->get_meta(self::META_KEY);
 
-            if (!in_array($this->data['uuid'], [$order_meta['order_uuid'], $order_meta['uuid']])) {
-                wc_get_logger()->debug("Некорректный UUID для заказа #{$order_id}", [
-                    'data_uuid' => $this->data['uuid'],
+            if (!(in_array($cdek_uuid, [$order_meta['order_uuid'], $order_meta['uuid']]) || in_array($cdek_number, [$order_meta['order_number'], $order_meta['number']]))) {
+                Logger::debug("Webhook: Некорректный UUID или Track ID для заказа #{$order_id}", [
+                    'data_uuid' => $cdek_uuid,
+                    'data_number' => $cdek_number,
                     'order_meta' => $order_meta,
                 ]);
                 return false;
@@ -143,13 +147,13 @@ namespace Cdek\Actions {
 
             $this->order->update_status($status, '[CDEKDelivery]');
             $data = [
-                'message' => "Заказ #{$this->order->get_id()} синхронизирован",
+                'message' => "Webhook: Заказ #{$this->order->get_id()} синхронизирован",
                 'status' => [
                     'old' => $order_status,
                     'new' => $status,
                 ]
             ];
-            wc_get_logger()->debug($data['message'], $data['status']);
+            Logger::debug($data['message'], $data['status']);
             return $data;
         }
     }
