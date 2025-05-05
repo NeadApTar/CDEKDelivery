@@ -229,6 +229,13 @@ namespace Cdek {
                 (new MigrateCityCodeFromMap)($this);
             }
 
+            $webhookManager = new WebhookManager();
+            if ($this->synchronization_statuses) {
+                $webhookManager->update();
+            } else {
+                $webhookManager->delete();
+            }
+
             parent::admin_options();
         }
 
