@@ -4,6 +4,7 @@ import './style/main.scss';
 import { __ } from '@wordpress/i18n';
 import { debounce } from 'lodash';
 
+const internationalFields = $('#passport_series_field, #passport_number_field, #passport_date_of_issue_field, #passport_organization_field, #tin_field, #passport_date_of_birth_field');
 const billingCityInput = $('#billing_city');
 const shippingCityInput = $('#shipping_city');
 const buttonNormalSize = 160;
@@ -110,10 +111,39 @@ const resizeObserver = new ResizeObserver(entries => {
     }
 });
 
+const togglePassportFields = debounce(() => {
+    const targetNode = $('.open-pvz-btn');
+    const country = ($('#ship-to-different-address-checkbox').is(':checked')
+        ? $('#shipping_country').val()
+        : $('#billing_country').val())
+
+    if (country === 'RU') {
+        internationalFields
+            .hide()
+            .find('input, select')
+            .prop('required', false);
+    } else {
+        internationalFields
+            .show()
+            .find('input, select')
+            .prop('required', true);
+    }
+
+    closeMap(targetNode);
+
+    $(document.body).trigger('update_checkout');
+}, 500);
+
+togglePassportFields();
+internationalFields
+    .find('.optional')
+    .replaceWith('<span class="required" aria-hidden="true">*</span>');
+
 $(document.body)
   .on('input',
     '#billing_city, #billing_postcode, #shipping_city, #shipping_postcode, input[name=payment_method]',
     debouncedCheckoutUpdate)
+  .on('change', '#billing_country, #shipping_country', togglePassportFields)
   .on('updated_checkout', () => {
       const targetNode = document.querySelector('.open-pvz-btn');
 
