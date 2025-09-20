@@ -37,6 +37,7 @@ namespace Cdek {
     use Cdek\UI\CheckoutMap;
     use Cdek\UI\Frontend;
     use Cdek\Validator\CheckoutValidator;
+    use Cdek\Validator\InternationalCheckoutValidator;
     use RuntimeException;
 
     class Loader
@@ -240,6 +241,7 @@ namespace Cdek {
             );
 
             add_action('woocommerce_checkout_process', new CheckoutValidator);
+            add_action('woocommerce_after_checkout_validation', [InternationalCheckoutValidator::class, 'validate'], 10, 2);
             add_action('woocommerce_store_api_checkout_update_order_meta', new CheckoutValidator(false));
             add_action('woocommerce_order_before_calculate_totals', new RecalculateShippingAction, 10, 2);
 
