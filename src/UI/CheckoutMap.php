@@ -59,11 +59,10 @@ namespace Cdek\UI {
                 );
             }
 
-            printf('<span>Количество дней доставки: %s дней</span>', $meta[MetaKeys::PERIOD]);
             printf(
                 '<div class="open-pvz-btn" data-city="%s" data-type="%s"><script type="application/cdek-offices">%s</script><a>%s</a></div><input name="office_code" class="cdek-office-code" type="hidden" value="%s"/>',
                 esc_attr($meta[MetaKeys::CITY]),
-                $this->getTariffType($meta[MetaKeys::OFFICE_CODE]),
+                $this->getTariffType($meta[MetaKeys::TARIFF_CODE]),
                 wc_esc_json($city !== null ? $api->officeListRaw($city) : '[]', true),
                 is_null($officeInfo) ? esc_html__('Choose pick-up', 'cdekdelivery') :
                     esc_html__('Re-select pick-up', 'cdekdelivery'),
@@ -73,7 +72,7 @@ namespace Cdek\UI {
 
         private function getTariffType($tariffCode): string
         {
-            return Tariff::isToPickup($tariffCode) ? 'POSTAMAT' : 'PVZ';
+            return Tariff::isToPickup((int)$tariffCode) ? 'POSTAMAT' : 'PVZ';
         }
     }
 }
