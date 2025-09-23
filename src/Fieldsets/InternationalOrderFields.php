@@ -36,7 +36,7 @@ namespace Cdek\Fieldsets {
                     'label'             => esc_html__('Passport number', 'cdekdelivery'),
                     'required'          => false,
                     'custom_attributes' => [
-                        'maxlength' => 6,
+                        'maxlength' => 7,
                     ],
                     'class'             => ['form-row-last'],
                 ],
@@ -58,7 +58,7 @@ namespace Cdek\Fieldsets {
                     'label'             => esc_html__('TIN', 'cdekdelivery'),
                     'required'          => false,
                     'custom_attributes' => [
-                        'maxlength' => 12,
+                        'maxlength' => 14,
                     ],
                     'class'             => ['form-row-first'],
                 ],

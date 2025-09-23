@@ -36,8 +36,8 @@ namespace Cdek\Validator {
             }
 
             // простая проверка формата ИНН
-            if (!empty($_POST['tin']) && !preg_match('/^[0-9]{10}([0-9]{2,4})?$/', $_POST['tin'])) {
-                $errors->add('tin_invalid', __('ИНН должен состоять из 10, 12 или 14 цифр.', 'cdekdelivery'));
+            if (!empty($_POST['tin']) && !preg_match('/^([А-Яа-яA-Za-z]{0,2})?[0-9]{7,10}([0-9]{2,4})?$/iu', $_POST['tin'])) {
+                $errors->add('tin_invalid', __('ИНН должен состоять из 9, 10, 12 или 14 символов.', 'cdekdelivery'));
             }
         }
     }
