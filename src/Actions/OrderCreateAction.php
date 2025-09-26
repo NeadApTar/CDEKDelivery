@@ -68,16 +68,17 @@ namespace Cdek\Actions {
             $this->shipping = $shipping;
             $this->tariff   = (int)($shipping->tariff ?: $this->order->tariff_id);
 
+            $deliveryMethod = $this->shipping->getMethod();
+            $imNumber = ($deliveryMethod->order_prefix ?: '') . $orderId;
+
             try {
-                $coreApi = new CoreApi;
+                $existingOrder = $this->api->orderGetByImNumber($imNumber);
 
-                $existingOrder = $coreApi->orderGet($orderId);
-
-                $this->order->number = $existingOrder['track'];
+                $this->order->number = $existingOrder->entity()['cdek_number'];
                 $this->order->save();
 
                 return new ValidationResult(true);
-            } catch (CoreAuthException|ApiException|CacheException $e) {
+            } catch (LegacyAuthException|ApiException $e) {
                 //Do nothing
             }
 
