@@ -26,6 +26,8 @@ namespace Cdek\Actions {
         {
             $this->data = $dataJson;
 
+            sleep(7);
+
             if ($this->getOrder()) {
                 return $this->updateOrderStatus();
             }
