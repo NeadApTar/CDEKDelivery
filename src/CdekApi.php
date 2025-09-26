@@ -398,6 +398,20 @@ namespace Cdek {
          * @throws ApiException
          * @throws LegacyAuthException
          */
+        public function orderGetByImNumber(string $imNumber): HttpResponse
+        {
+            return HttpClient::sendJsonRequest(
+
+                "{$this->apiUrl}orders?" . http_build_query(["im_number" => $imNumber]),
+                'GET',
+                $this->tokenStorage->getToken(),
+            );
+        }
+
+        /**
+         * @throws ApiException
+         * @throws LegacyAuthException
+         */
         public function waybillCreate(string $cdekNumber): ?string
         {
             return HttpClient::sendJsonRequest(
